@@ -11,9 +11,6 @@ def extract(ressources):
     strip1 = ImageOps.expand(ressources.crop((0, 0, 160, 40)), 2, )
     strip2 = ImageOps.expand(ressources.crop((0, 40, 160, 90)), 2, )
     strip3 = ImageOps.expand(ressources.crop((0, 90, 160, 130)), 2, )
-    # strip1.show()
-    # strip2.show()
-    # strip3.show()
     pt.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
     return (''.join(re.findall(r'\d+', pt.image_to_string(strip1))),
             ''.join(re.findall(r'\d+', pt.image_to_string(strip2))),
@@ -21,7 +18,10 @@ def extract(ressources):
 
 
 def grab_resources():
-    return pyautogui.screenshot(region=(80, 120, 160, 130)).convert('L').point(lambda p: 0 if p > 220 else 255)
+    s = pyautogui.screenshot(region=(80, 120, 160, 130))
+    s = s.convert('L')
+    s = s.point(lambda p: 0 if p > 220 else 255)
+    return s
 
 
 def click_to(x, y, dur=0.5, t=0):
@@ -42,27 +42,27 @@ def print_resources(gold, pink, dark, isInt):
 
 def next_village(c):
     time.sleep(2)
-    click_to(1763, 824, 0.5, c)
+    click_to(1763, 824, 0.1, c)
 
 
 def launch_attack():
     click_to(153, 972)
-    click_to(1265, 660)
+    click_to(1265, 660, 0.5, 1)
 
 
 def enough_resources(gold, pink, dark):
-    return dark > 10000 or gold > 1000000 or pink > 1000000 or (dark > 7000 and gold > 800000 and pink > 800000)
+    return gold > 1000000 or pink > 1000000 or (gold > 800000 and pink > 800000)
 
 
 def main():
-    village_count = 0
     resource_value_not_found_counter = 0
     already_missed_some = False
     launch_attack()
+    village_count = 2
     while True:
         time.sleep(3)
         ressources = grab_resources()
-        # ressources.show()
+        ressources.show()
         gold, pink, dark = extract(ressources)
 
         if all(len(var) == 0 for var in (gold, pink, dark)):
@@ -101,7 +101,7 @@ def main():
                 village_count += 1
 
             elif enough_resources(gold, pink, dark):
-                winsound.Beep(440, 500)
+                winsound.Beep(2000, 200)
                 print("Village found ! \n")
                 print_resources(gold, pink, dark, True)
                 print("Programm shutting down")
