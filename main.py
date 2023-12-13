@@ -2,25 +2,39 @@
 import time
 import re
 import pyautogui
-from PIL import ImageOps
+from PIL import ImageOps, Image
 import pytesseract as pt
 import winsound
+from datetime import datetime
 
 
 def extract(ressources):
-    strip1 = ImageOps.expand(ressources.crop((0, 0, 160, 40)), 2, )
-    strip2 = ImageOps.expand(ressources.crop((0, 40, 160, 90)), 2, )
-    strip3 = ImageOps.expand(ressources.crop((0, 90, 160, 130)), 2, )
+    strip1 = ImageOps.expand(ressources.crop((0, 0, 160, 40)), 1, )
+    strip2 = ImageOps.expand(ressources.crop((0, 40, 160, 90)), 1, )
+    strip3 = ImageOps.expand(ressources.crop((0, 90, 160, 130)), 1, )
+    # strip1.show()
+    # strip2.show()
+    # strip3.show()
     pt.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-    return (''.join(re.findall(r'\d+', pt.image_to_string(strip1))),
-            ''.join(re.findall(r'\d+', pt.image_to_string(strip2))),
-            ''.join(re.findall(r'\d+', pt.image_to_string(strip3))))
+    s1 = pt.image_to_string(strip1, config='outputbase digits')
+    s2 = pt.image_to_string(strip2, config='outputbase digits')
+    s3 = pt.image_to_string(strip3, config='outputbase digits')
+    # print(s1)
+    # print(s2)
+    # print(s3)
+    s1 = ''.join(re.findall(r'\d+', s1))
+    s2 = ''.join(re.findall(r'\d+', s2))
+    s3 = ''.join(re.findall(r'\d+', s3))
+    return s1, s2, s3
 
 
 def grab_resources():
-    s = pyautogui.screenshot(region=(80, 120, 160, 130))
+    s = pyautogui.screenshot(region=(76, 120, 160, 130))
+    # s.show()
     s = s.convert('L')
+    # s.show()
     s = s.point(lambda p: 0 if p > 220 else 255)
+    # s.show()
     return s
 
 
@@ -54,6 +68,10 @@ def enough_resources(gold, pink, dark):
     return gold > 1000000 or pink > 1000000 or (gold > 800000 and pink > 800000)
 
 
+def values_illogical(gold, pink, dark):
+    return gold > 2000000 or pink > 2000000 or dark > 15000 or abs(pink - gold) > 7 * max(pink, gold) / 10
+
+
 def main():
     resource_value_not_found_counter = 0
     already_missed_some = False
@@ -62,7 +80,7 @@ def main():
     while True:
         time.sleep(3)
         ressources = grab_resources()
-        ressources.show()
+        # ressources.show()
         gold, pink, dark = extract(ressources)
 
         if all(len(var) == 0 for var in (gold, pink, dark)):
@@ -85,6 +103,7 @@ def main():
                 already_missed_some = True
                 print("Retrying... \n")
                 continue
+            save_failure(ressources, gold, pink, dark)
             resource_value_not_found_counter = 0
             already_missed_some = False
             next_village(village_count)
@@ -94,14 +113,15 @@ def main():
             resource_value_not_found_counter = 0
             already_missed_some = False
             gold, pink, dark = int(gold), int(pink), int(dark)
-            if dark > 20000 or gold > 2000000 or pink > 2000000:
+            if values_illogical(gold, pink, dark):
                 print("Values extraction failed : \n")
                 print_resources(gold, pink, dark, True)
+                save_failure(ressources, gold, pink, dark)
                 next_village(village_count)
                 village_count += 1
 
             elif enough_resources(gold, pink, dark):
-                winsound.Beep(2000, 200)
+                winsound.Beep(3000, 150)
                 print("Village found ! \n")
                 print_resources(gold, pink, dark, True)
                 print("Programm shutting down")
@@ -113,8 +133,19 @@ def main():
                 village_count += 1
 
 
+def save_failure(ressources, gold, pink, dark):
+    failure_time = datetime.now().strftime("%Y-%m-%d %H-%M-%S")
+    failure_time = failure_time.replace(" ", "_").replace(":", "-")
+    filename = fr"C:\Users\menbu\PycharmProjects\pythonProject\failures\failed_{failure_time}"
+    print(f"Saving failure at {filename} \n")
+    ressources.save(filename + ".png")
+    with open(filename + ".txt", 'w') as f:
+        f.write(f"Gold : {gold} \nPink : {pink} \nDark : {dark}")
+
+
 if __name__ == '__main__':
     try:
+        # print(extract(Image.open('test.png')))
         time.sleep(2)
         main()
 
