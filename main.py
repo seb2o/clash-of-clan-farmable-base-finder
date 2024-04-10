@@ -1,4 +1,3 @@
-# This is a sample Python script.
 import time
 import re
 import pyautogui
@@ -144,4 +143,3 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print("\nProgram stopped.")
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
