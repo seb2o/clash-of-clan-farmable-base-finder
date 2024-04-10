@@ -12,29 +12,20 @@ def extract(ressources):
     strip1 = ImageOps.expand(ressources.crop((0, 0, 160, 40)), 1, )
     strip2 = ImageOps.expand(ressources.crop((0, 40, 160, 90)), 1, )
     strip3 = ImageOps.expand(ressources.crop((0, 90, 160, 130)), 1, )
-    # strip1.show()
-    # strip2.show()
-    # strip3.show()
     pt.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
     s1 = pt.image_to_string(strip1, config='outputbase digits')
     s2 = pt.image_to_string(strip2, config='outputbase digits')
     s3 = pt.image_to_string(strip3, config='outputbase digits')
-    # print(s1)
-    # print(s2)
-    # print(s3)
     s1 = ''.join(re.findall(r'\d+', s1))
     s2 = ''.join(re.findall(r'\d+', s2))
     s3 = ''.join(re.findall(r'\d+', s3))
     return s1, s2, s3
 
 
-def grab_resources():
+def grab_ressources():
     s = pyautogui.screenshot(region=(76, 120, 160, 130))
-    # s.show()
     s = s.convert('L')
-    # s.show()
     s = s.point(lambda p: 0 if p > 220 else 255)
-    # s.show()
     return s
 
 
@@ -73,19 +64,20 @@ def values_illogical(gold, pink, dark):
 
 
 def main():
+    ocr_fail_patience = 4
     resource_value_not_found_counter = 0
     already_missed_some = False
     launch_attack()
     village_count = 2
     while True:
         time.sleep(3)
-        ressources = grab_resources()
+        ressources = grab_ressources()
         # ressources.show()
         gold, pink, dark = extract(ressources)
 
         if all(len(var) == 0 for var in (gold, pink, dark)):
             print("Values not found")
-            if resource_value_not_found_counter > 4:
+            if resource_value_not_found_counter > ocr_fail_patience:
                 print()
                 next_village(village_count)
                 village_count += 1
